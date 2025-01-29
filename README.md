@@ -1,1 +1,7 @@
-# C2_ACLF_2025
+### C2_ACLF_2025
+
+Patients with acute decompensation (AD) of cirrhosis are at high risk of developing acute-on-chronic liver failure (ACLF), a syndrome characterized by multiple organ failure and high short-term mortality. This study aimed to analyse alterations in peripheral blood mononuclear cells (PBMCs) in patients with AD using single-cell technologies and to explore their implications for risk stratification and prognosis. 
+
+By the application of single-cell RNA sequencing of peripheral blood mononuclear cells in AD patients, we found a significant increase of classical monocytes in patients with subsequent ACLF development. Notably, classical monocytes represented the cell type with the highest transcriptional alterations. Within the classical monocyte population, a specific subcluster, termed “C2”, was identified and found to be enriched during progression towards ACLF. This monocytic subpopulation was primarily characterized by decreased expression of genes encoding enzymes relevant to cellular energy supply, such as oxidative phosphorylation and ATP production. Pathway analysis confirmed a marked impairment of energy metabolism pathways within the C2 subcluster. A gene signature derived from that monocytic subpopulation was significantly increased in patients with bacterial infection, ACLF development and non-survivors of two independent multicenter cohorts of patients with AD. 
+
+### Biorxive link
