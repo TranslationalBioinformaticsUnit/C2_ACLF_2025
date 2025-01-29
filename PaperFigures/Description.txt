@@ -1,1 +1,1 @@
-
+This folder contains the .pdf version of the figures included in the manuscript.
