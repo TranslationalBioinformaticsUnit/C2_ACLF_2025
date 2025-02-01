@@ -1,1 +1,3 @@
+This folder contains the R code to generate the figures in the manuscript. 
 
+Minor changes in Adobe Illustrator were performed to organize the different panels.
