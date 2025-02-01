@@ -1,12 +1,12 @@
+# Load packages
 library(Seurat)
 library(ggplot2)
 library(dplyr)
 library(scProportionTest)
 library(grid)
 
-data <- readRDS('./00.Data/seurat_integrated.rds')
 
-##### A) UMAP annotated with all cells ##### 
+# A) Annotated UMAP  with all cells 
 color_palette <-  c("#1f77b4", "#d62728","#2ca02c",  "#ff7f0e", "#9467bd", "#636363","#bcbd22","#17becf", "#e377c2" ,"#8c564b","#ad494a")
 
 Idents(data) <- "annotation"
@@ -18,7 +18,8 @@ data@active.ident <- factor(x = data@active.ident, levels = order_cells)
 Umap_data <- DimPlot(data, group.by = "annotation", raster=F, cols = color_palette, label = T) + ggtitle(NULL) + NoAxes() + 
   theme(legend.text =   element_text(size=8), legend.key.size = unit(0.5, "cm"))
 
-##### B) Bar with proportions of cell types by group ##### 
+
+# B) BarPlot with proportions of cell types by group 
 find_proportions_df <- function(seurat_obj, x, fill) {
   df <- seurat_obj@meta.data %>%
     dplyr::select(x, fill) %>%
@@ -52,13 +53,12 @@ plot_stacked_barplot <- function(df, x, fill, colors) {
 
 proportions_df_cells <- find_proportions_df(
   data,
-  x = "groups_new",
+  x = "groups",
   fill = "annotation"
 )
 
 str(proportions_df_cells)
-levels(proportions_df_cells$groups_new) <- list(HC="Healthy",SDC= "SDC", UDC="UDC",preACLF="ACLF_early")
-proportions_df_cells$groups_new <- factor(proportions_df_cells$groups_new, levels= (c("HC"    ,  "SDC"  ,   "UDC"  ,   "preACLF")), ordered = T)
+levels(proportions_df_cells$groups_new) <- list(HC="Healthy",SDC= "SDC", UDC="UDC",preACLF="pre-ACLF")
 levels(proportions_df_cells$annotation) <- list(`B cells`="B-Cell", `Classical monocytes`="CD14-Mono", `Non-classical monocytes`="CD16-Mono" ,
                                                 `CD4+ T cells`= "CD4" ,`CD8+ T cells`="CD8",`NK cells`= "NK",`MAIT cells`="MAIT" ,    
                                                 `Dendritic cells`="Dendritic" , `dnT cells`= "dnT", `gdT cells`="gdT", `Regulatory T cells`="Treg"   )
@@ -72,16 +72,14 @@ stacked_barplot_cells <- plot_stacked_barplot(
 )
 
 
-##### C) Cleveland to compare cell proportions between AD and HC ##### 
-data$orig.ident <- data@meta.data$groups_new
-table(data$orig.ident)
-(table(data$annotation))
+# C) Cleveland plot to compare cell proportions between AD and HC 
+
+data$orig.ident <- data@meta.data$groups
 
 prop_test <- sc_utils(data)
 
-
 proptest_res <- list()
-comp <- c("SDC", "UDC","ACLF_early")
+comp <- c("SDC", "UDC","pre-ACLF")
 celltype <- names(table(data$annotation))
 
 for (i in 1:length(celltype)){
@@ -102,11 +100,12 @@ proptest_res_df <- data.frame(celltypes=rep(proptest_res[[1]]$clusters,3),
                               Color= c(rep("#FFCC00",11), rep("#FF6600",11), rep("#990000",11) ))
 
 table(data$annotation)/dim(df_integrated)[2]*100 # We keep those cells that represent >1 % of the global population:
-celltype2 <- c("B-Cell", "CD14-Mono", "CD16-Mono", "CD4" , "CD8", "MAIT", "Treg", "NK" )
-proptest_res_df_sub <- proptest_res_df[proptest_res_df$celltypes %in% celltype2,]
+celltype_subset <- c("B-Cell", "CD14-Mono", "CD16-Mono", "CD4" , "CD8", "MAIT", "Treg", "NK" )
+proptest_res_df_sub <- proptest_res_df[proptest_res_df$celltypes %in% celltype_subset,]
 proptest_res_df_sub$celltypes <- factor(proptest_res_df_sub$celltypes, levels=rev(c("B-Cell", "CD14-Mono", "CD16-Mono", "CD4" , "CD8", "NK" , "MAIT", "Treg")))
 
-proptest_res_df_sub$Contrast <- factor(proptest_res_df_sub$Contrast ,levels=(c("SDC vs HC", "UDC vs HC", "preACLF vs HC")))
+proptest_res_df_sub$Contrast <- factor(proptest_res_df_sub$Contrast ,levels=(c("SDC vs HC", "UDC vs HC", "pre-ACLF vs HC")))
+
 cleveland <- ggplot(proptest_res_df_sub, aes(FC, celltypes, color=Contrast)) +
   ggtitle("Differences in cell type proportion") +
   geom_point(aes(size=Pval),alpha =0.8) +
@@ -123,8 +122,8 @@ cleveland <- ggplot(proptest_res_df_sub, aes(FC, celltypes, color=Contrast)) +
     legend.text =   element_text(size=8), legend.key.size = unit(0.4, "cm"), legend.title = element_text(size=9))
 
 
-##### D) Number of DEA per cell type #####
-Idents(data) <- "groups_new"
+# D) Number of DEA per cell type
+Idents(data) <- "groups"
 
 order_cells <- c( "B-Cell","CD14-Mono", "CD16-Mono", "CD4", "CD8","NK", "MAIT", "Dendritic", "dnT", "gdT", "Treg")
 patients <- c("Healthy","SDC","UDC")
@@ -194,7 +193,8 @@ DEA_numbers_plot <- ggplot(DEA_numbers,aes(`Cell Type`,values, fill = ind)) +
         plot.title = element_text(face = "bold", size=11))
 
 
-##### E) Volcano Plots between preACLF and HC in all cell types ##### 
+# E) Volcano Plots between preACLF and HC in all cell types 
+
 Volcano_plot <- function(df, Celltype) {
   ggplot(df, aes(x=avg_log2FC, y=-log10(p_val_adj), colour=diffexpressed)) +
     geom_point(size=0.5, alpha=0.5) + 
@@ -221,7 +221,7 @@ Volcano_plot <- function(df, Celltype) {
 }
 
 
-#### ACLF vs UDC
+#### pre-ACLF vs UDC
 a <- Volcano_plot(Celltype_markers$`B-Cell`[[3]], "B cells")
 b <- Volcano_plot(Celltype_markers$`CD14-Mono`[[3]], "CD14 Monocytes")
 c <- Volcano_plot(Celltype_markers$`CD16-Mono`[[3]], "CD16 Monocytes")
@@ -237,8 +237,7 @@ volcanos_ACLF_UDC <- annotate_figure(volcanos_ACLF_UDC, top = text_grob("pre-ACL
                             bottom = textGrob("Log2FC",vjust = -1.5, hjust = 0), fig.lab.size = 8)
 
 
-pdf("Volcanos_alcf_UDC.pdf", height=4)
 volcanos_ACLF_UDC <- ggarrange(a,b,c,d,e,f,g,h,common.legend = TRUE,  ncol = 4, nrow=2, legend = "bottom")
-volcanos_ACLF_UDC<- annotate_figure(volcanos_ACLF_UDC,top = text_grob("pre-ACLF vs UDC", face = "bold", size = 12),  left = textGrob("-Log10 Adjusted P-value", rot = 90, vjust = 1, gp = gpar(cex = 1)),
+volcanos_ACLF_UDC <- annotate_figure(volcanos_ACLF_UDC,top = text_grob("pre-ACLF vs UDC", face = "bold", size = 12),  left = textGrob("-Log10 Adjusted P-value", rot = 90, vjust = 1, gp = gpar(cex = 1)),
                 bottom = textGrob("Fold Change", gp = gpar(cex = 1)))
-dev.off()
+
