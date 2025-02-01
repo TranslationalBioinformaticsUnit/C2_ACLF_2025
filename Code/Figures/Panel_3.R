@@ -1,47 +1,45 @@
+# load libraries
 library(BuenColors)
 library(Seurat)
 
-##### A) UMAP with CD14 zoom ##### 
-data@meta.data$all <- as.character(data$groups_new2)
-data@meta.data$all[data@meta.data$groups_new2=="disease"] <- "cells"
-data@meta.data$all[data@meta.data$groups_new2=="healthy"] <- "cells"
+# A) UMAP with CD14 zoom
+data@meta.data$all <- as.character(data$groups)
+data@meta.data$all[data@meta.data$groups=="disease"] <- "cells"
+data@meta.data$all[data@meta.data$groups=="healthy"] <- "cells"
 
 Idents(data) <- "annotation"
 
 CD14 <- subset(x = data, idents = c("CD14-Mono"))
 Idents(CD14) <- "annot2"
 
-
 ### UMAP with CD14 in red and rest in grey
 data@meta.data$grey <- as.character(data$annotation)
 data@meta.data$grey[data@meta.data$annotation=="CD14-Mono"] <- "CD14 Monocytes"
 data@meta.data$grey[!data@meta.data$annotation=="CD14-Mono"] <- " "
 
-table(data$grey)
 Idents(data) <- "grey"
 Umap_2colors <- DimPlot(data, raster = F, cols=c("snow3", "ivory4"), label = T) + ggtitle(NULL) + NoAxes() +
   theme( legend.position = "none") 
 
 ### Coloured CD14 umap with subclusters
-Umap_CD14 <- DimPlot(CD14, group.by = "annot2", raster=F, cols = c("#d62728", "lightpink", "deeppink4")) + ggtitle(NULL) + NoAxes() +theme( legend.position = "none") 
+Umap_CD14 <- DimPlot(CD14, group.by = "annotation", raster=F, cols = c("#d62728", "lightpink", "deeppink4")) + ggtitle(NULL) + NoAxes() +theme( legend.position = "none") 
 
-#### Barplot for CD14s inlcuding subtypes summarise in one bar
+#### Barplot for CD14s including subtypes summarise in one bar
 proportions_CD14 <- data.frame(find_proportions_df(
   CD14,
   x = "all",
-  fill = "annot2"
+  fill = "annotation"
 ))
 
-proportions_CD14$annot2 <- as.factor(proportions_CD14$annot2)
-levels(proportions_CD14$annot2) <- (c("C0" ,"C1", "C2"))
+proportions_CD14$annotation <- as.factor(proportions_CD14$annotation)
+levels(proportions_CD14$annotation) <- (c("C0" ,"C1", "C2"))
 
-proportions_CD14 <- proportions_CD14[order(proportions_CD14$annot2),]
-
+proportions_CD14 <- proportions_CD14[order(proportions_CD14$annotation),]
 
 color_palette3 <-  (c( "#d62728", "lightpink", "deeppink4"))
 
 stacked_barplot_CD14 <- proportions_CD14 %>%
-  ggplot(aes(x = all, y = percentage_cells, group = annot2, fill = annot2)) +
+  ggplot(aes(x = all, y = percentage_cells, group = annotation, fill = annotation)) +
   geom_col(position = position_stack(reverse = TRUE))+
   ggtitle("") + 
   coord_flip() +
@@ -55,47 +53,19 @@ stacked_barplot_CD14 <- proportions_CD14 %>%
     legend.position = "bottom"
   )
 
-proportions_CD14 <- data.frame(find_proportions_df(
-  CD14,
-  x = "all",
-  fill = "annot2"
-))
 
-proportions_CD14$annot2 <- as.factor(proportions_CD14$annot2)
-levels(proportions_CD14$annot2) <- (c("C0" ,"C1", "C2"))
+# B) Barplot with relative proportions of CD14 by patient 
 
-proportions_CD14 <- proportions_CD14[order(proportions_CD14$annot2),]
-
-
-color_palette3 <-  (c( "#d62728", "lightpink", "deeppink4"))
-
-stacked_barplot_CD14 <- proportions_CD14 %>%
-  ggplot(aes(x = all, y = percentage_cells, group = annot2, fill = annot2)) +
-  geom_col(position = position_stack(reverse = TRUE))+
-  ggtitle("") + 
-  coord_flip() +
-  labs(x = " ", y = "Percentage of Cells (%)", fill = "") + 
-  scale_fill_manual(values = color_palette3) +
-  theme(
-    axis.title.y = element_text(size = 12, face = "bold"),
-    axis.text = element_text(size = 11),
-    axis.text.y = element_blank(),  # Remove y-axis tick text
-    axis.ticks.y = element_blank(),
-    legend.position = "bottom"
-  )
-
-##### B) Barplot with relative proportions of CD14 by patient ##### 
 proportions_df_pat <- find_proportions_df(
   data,
   x = "patient",
-  fill = "annot2"
+  fill = "annotation"
 )
 
-CD14_prop_pat <- proportions_df_pat[proportions_df_pat$annot2=="C0" | proportions_df_pat$annot2=="C1" | proportions_df_pat$annot2=="C2", ]
-
+CD14_prop_pat <- proportions_df_pat[proportions_df_pat$annotation=="C0" | proportions_df_pat$annotation=="C1" | proportions_df_pat$annotation=="C2", ]
 
 barplot_CD14 <- CD14_prop_pat %>% 
-  ggplot(aes(x = patient, y = percentage_cells, group = annot2, fill = annot2)) +
+  ggplot(aes(x = patient, y = percentage_cells, group = annotation, fill = annotation)) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values =  c("#d62728", "lightpink", "deeppink4"))+
   labs(x = "Patient", 
@@ -117,9 +87,8 @@ barplot_CD14 <- CD14_prop_pat %>%
   )
 
 
-##### 3 C) Cleveland for CD14 subclusters #####  
-data$orig.ident <- data@meta.data$groups_new
-table(data$orig.ident)
+# 3 C) Cleveland for CD14 subclusters   
+data$orig.ident <- data@meta.data$groups
 
 prop_test <- sc_utils(data)
 
@@ -167,11 +136,12 @@ cleveland_Monocytes <- ggplot(proptest_res_df_sub, aes(FC, celltypes, color=Cont
     
   )
 
-##### D) Trajectory Analysis #####
+
+##### D) Trajectory Analysis 
+
 cds_short_names_df <- data.frame(gene_short_name=rownames(CD14))
 rownames(cds_short_names_df) <- rownames(CD14)
 cds <- new_cell_data_set(CD14@assays$RNA@data , cell_metadata =CD14@meta.data, gene_metadata=cds_short_names_df)
-
 
 
 cds@int_colData@listData[["reducedDims"]]@listData[["UMAP"]] <- CD14@reductions[["umap"]]@cell.embeddings
@@ -184,7 +154,7 @@ cds <- order_cells(cds, reduction_method = "UMAP")
 plot_cells(cds, color_cells_by="pseudotime", label_groups_by_cluster=F, label_branch_points=F, label_roots=F, label_leaves=F)
 
 
-###### E) Dotplot ######
+###### E) Dotplot 
 markers_list <- c("CD14", "HLA-DRA","HLA-DRB1","LYZ","S100A8", "S100A9", "CD68","FUT4","HIF1A", "IRAK3","MERTK","TLR2", "VCAN")
 
 CD14_Dotplot <- DotPlot(CD14, markers_list, scale=T) +
